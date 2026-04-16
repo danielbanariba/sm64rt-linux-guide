@@ -6,8 +6,9 @@ This guide covers two builds:
 - **sm64rt** — Vanilla SM64 textures + RT64 path tracing
 - **Render96ex RT64** — HD textures + HD models + RT64 path tracing
 
-![Render96ex RT64 on Linux](screenshot-render96-rt.png)
-![sm64rt on Linux](screenshot-sm64rt.png)
+![Render96ex RT64 — Castle Interior (HD textures + path tracing)](screenshot-render96-rt-castle.png)
+![Render96ex RT64 — Bob-omb Battlefield](screenshot-render96-rt.png)
+![sm64rt — Vanilla textures + path tracing](screenshot-sm64rt.png)
 
 ## Requirements
 
