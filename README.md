@@ -2,13 +2,42 @@
 
 Run Super Mario 64 with real-time path tracing on Linux using Wine, a patched vkd3d-proton, and DXVK.
 
-This guide covers two builds:
+This repo provides:
 - **sm64rt** — Vanilla SM64 textures + RT64 path tracing
 - **Render96ex RT64** — HD textures + HD models + RT64 path tracing
 
 ![Render96ex RT64 — Castle Interior (HD textures + path tracing)](screenshot-render96-rt-castle.png)
 ![Render96ex RT64 — Bob-omb Battlefield](screenshot-render96-rt.png)
 ![sm64rt — Vanilla textures + path tracing](screenshot-sm64rt.png)
+
+## ⚡ Quick Install (One Command)
+
+```bash
+curl -sL https://raw.githubusercontent.com/danielbanariba/sm64rt-linux-guide/main/install.sh | bash -s -- /path/to/baserom.us.z64
+```
+
+Or clone and run:
+```bash
+git clone https://github.com/danielbanariba/sm64rt-linux-guide.git
+cd sm64rt-linux-guide
+./install.sh /path/to/baserom.us.z64
+```
+
+The installer handles **everything**: deps, SDL2, vkd3d-proton patch + build, sm64rt build, Render96ex RT64 build, Wine prefix, DXVK, VC++ runtime, gamepad DB, launchers. Takes ~20 minutes total. After that:
+
+```bash
+~/build/sm64rt-linux/run-sm64rt.sh           # vanilla + RT
+~/build/sm64rt-linux/run-render96-rtx.sh     # HD textures/models + RT
+```
+
+**Optional flags:**
+- `SKIP_RENDER96=1 ./install.sh ROM` — skip the Render96ex build (faster, smaller)
+- `SKIP_DEPS=1 ./install.sh ROM` — skip pacman/yay (if already installed)
+- `BUILD_DIR=/custom/path ./install.sh ROM` — install elsewhere
+
+---
+
+## Manual Installation (if you want to understand each step)
 
 ## Requirements
 
