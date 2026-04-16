@@ -52,15 +52,28 @@ check_rom() {
     ok "ROM verified ($EXPECTED_ROM_SHA1)"
 }
 
-check_arch() {
-    if ! command -v pacman &>/dev/null; then
-        err "This installer requires Arch Linux (or derivative with pacman)."; exit 1
+detect_distro() {
+    [[ -f /etc/os-release ]] && . /etc/os-release || { err "Cannot detect distro"; exit 1; }
+    case " ${ID:-} ${ID_LIKE:-} " in
+        *" arch "*|*" cachyos "*|*" manjaro "*|*" endeavouros "*) DISTRO="arch" ;;
+        *" debian "*|*" ubuntu "*|*" linuxmint "*|*" pop "*) DISTRO="debian" ;;
+        *" fedora "*|*" rhel "*|*" centos "*|*" rocky "*|*" almalinux "*) DISTRO="fedora" ;;
+        *" opensuse "*|*" suse "*) DISTRO="suse" ;;
+        *) DISTRO="unknown" ;;
+    esac
+    if [[ "$DISTRO" == "unknown" ]]; then
+        err "Unsupported distro: ${ID:-?} (${ID_LIKE:-no ID_LIKE})"
+        err "Supported: Arch family, Debian/Ubuntu family, Fedora/RHEL family, openSUSE family"
+        exit 1
     fi
-    if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
-        err "AUR helper required. Install yay: sudo pacman -S yay"; exit 1
+    ok "Detected distro: ${PRETTY_NAME:-$ID} ($DISTRO family)"
+
+    if [[ "$DISTRO" == "arch" ]]; then
+        if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
+            err "AUR helper required. Install yay: sudo pacman -S yay"; exit 1
+        fi
+        AUR_HELPER=$(command -v yay || command -v paru)
     fi
-    AUR_HELPER=$(command -v yay || command -v paru)
-    ok "Detected: $(pacman --version | head -1), AUR helper: $AUR_HELPER"
 }
 
 check_gpu() {
@@ -79,16 +92,61 @@ check_gpu() {
     fi
 }
 
-# ─── STEP 1: SYSTEM DEPENDENCIES ───────────────────────────────────────────────
+# ─── STEP 1: SYSTEM DEPENDENCIES (multi-distro) ────────────────────────────────
 install_deps() {
     [[ "$SKIP_DEPS" == "1" ]] && { warn "Skipping dependency install"; return; }
-    log "Installing system dependencies (sudo required)..."
-    sudo pacman -S --needed --noconfirm \
-        base-devel git python make \
-        mingw-w64-gcc mingw-w64-binutils mingw-w64-crt mingw-w64-headers mingw-w64-winpthreads \
-        wine winetricks meson ninja glslang p7zip
-    "$AUR_HELPER" -S --needed --noconfirm vkd3d-proton-mingw-git mingw-w64-glew
+    log "Installing system dependencies for $DISTRO family (sudo required)..."
+    case "$DISTRO" in
+        arch)
+            sudo pacman -S --needed --noconfirm \
+                base-devel git python make curl \
+                mingw-w64-gcc mingw-w64-binutils mingw-w64-crt mingw-w64-headers mingw-w64-winpthreads \
+                wine winetricks meson ninja glslang p7zip
+            "$AUR_HELPER" -S --needed --noconfirm mingw-w64-glew
+            ;;
+        debian)
+            sudo apt-get update
+            sudo apt-get install -y \
+                build-essential git python3 make curl \
+                gcc-mingw-w64 g++-mingw-w64 binutils-mingw-w64 mingw-w64-tools \
+                wine winetricks meson ninja-build glslang-tools p7zip-full \
+                libglew-dev
+            install_glew_mingw_from_source
+            ;;
+        fedora)
+            sudo dnf install -y \
+                @development-tools git python3 make curl \
+                mingw64-gcc mingw64-gcc-c++ mingw64-binutils mingw64-crt mingw64-headers mingw64-winpthreads \
+                mingw64-glew \
+                wine winetricks meson ninja-build glslang p7zip
+            ;;
+        suse)
+            sudo zypper install -y -t pattern devel_basis
+            sudo zypper install -y \
+                git python3 make curl \
+                mingw64-cross-gcc-c++ mingw64-cross-binutils mingw64-cross-pkgconf \
+                mingw64-glew-devel \
+                wine winetricks meson ninja glslang-devel p7zip-full
+            ;;
+    esac
     ok "Dependencies installed"
+}
+
+install_glew_mingw_from_source() {
+    if [[ -f /usr/x86_64-w64-mingw32/lib/libglew32.a ]] || [[ -f /usr/local/x86_64-w64-mingw32/lib/libglew32.a ]]; then
+        ok "GLEW for MinGW already present"
+        return
+    fi
+    log "Building GLEW for MinGW from source (Debian/Ubuntu lacks the package)..."
+    local GLEW_VER="2.2.0"
+    cd /tmp
+    [[ ! -f "glew-$GLEW_VER.tgz" ]] && curl -sL -o "glew-$GLEW_VER.tgz" \
+        "https://github.com/nigels-com/glew/releases/download/glew-$GLEW_VER/glew-$GLEW_VER.tgz"
+    [[ ! -d "glew-$GLEW_VER" ]] && tar xzf "glew-$GLEW_VER.tgz"
+    cd "glew-$GLEW_VER"
+    SYSTEM=linux-mingw64 make -j$(nproc)
+    sudo SYSTEM=linux-mingw64 GLEW_DEST=/usr/x86_64-w64-mingw32 make install
+    ok "GLEW for MinGW installed to /usr/x86_64-w64-mingw32"
 }
 
 # ─── STEP 2: SDL2 MINGW ────────────────────────────────────────────────────────
@@ -329,7 +387,7 @@ main() {
     echo ""
 
     check_rom
-    check_arch
+    detect_distro
     check_gpu
     install_deps
     setup_sdl2

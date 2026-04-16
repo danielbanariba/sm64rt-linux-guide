@@ -10,11 +10,20 @@ This repo provides:
 ![Render96ex RT64 — Bob-omb Battlefield](screenshot-render96-rt.png)
 ![sm64rt — Vanilla textures + path tracing](screenshot-sm64rt.png)
 
-## ⚡ Quick Install (One Command)
+## ⚡ Quick Install (One Command, Multi-Distro)
 
 ```bash
 curl -sL https://raw.githubusercontent.com/danielbanariba/sm64rt-linux-guide/main/install.sh | bash -s -- /path/to/baserom.us.z64
 ```
+
+**Auto-detects your distro** and installs dependencies via the right package manager:
+
+| Distro family | Detected from | Package manager |
+|---------------|---------------|-----------------|
+| Arch (CachyOS, Manjaro, EndeavourOS) | `arch`, `cachyos`, `manjaro`, `endeavouros` | `pacman` + `yay`/`paru` |
+| Debian (Ubuntu, Mint, Pop!_OS) | `debian`, `ubuntu`, `linuxmint`, `pop` | `apt-get` |
+| Fedora (RHEL, CentOS, Rocky, AlmaLinux) | `fedora`, `rhel`, `centos`, `rocky`, `almalinux` | `dnf` |
+| openSUSE (Leap, Tumbleweed) | `opensuse`, `suse` | `zypper` |
 
 Or clone and run:
 ```bash
