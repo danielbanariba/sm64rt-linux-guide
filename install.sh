@@ -171,27 +171,30 @@ setup_sdl2() {
     ok "SDL2 MinGW ready at $SDL_DIR"
 }
 
-# ─── STEP 3: PATCHED VKD3D-PROTON ──────────────────────────────────────────────
+# ─── STEP 3: VKD3D-PROTON (DXR FIX ALREADY UPSTREAM) ───────────────────────────
+# The fix is merged upstream in master. Build from HansKristian-Work/vkd3d-proton
+# until a new release after v3.0b ships with it.
 build_vkd3d_proton() {
     local VKD_DIR="$BUILD_DIR/vkd3d-proton"
     local VKD_OUT="$BUILD_DIR/vkd3d-output/vkd3d-proton-master/x64"
     if [[ -f "$VKD_OUT/d3d12.dll" ]] && [[ -f "$VKD_OUT/d3d12core.dll" ]]; then
-        ok "Patched vkd3d-proton already built"
+        ok "vkd3d-proton already built"
         return
     fi
-    log "Cloning vkd3d-proton with our DXR fix..."
+    log "Cloning vkd3d-proton (master has the DXR fix merged in PR #2940)..."
     mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
     if [[ ! -d "$VKD_DIR" ]]; then
-        git clone https://github.com/danielbanariba/vkd3d-proton.git
+        git clone https://github.com/HansKristian-Work/vkd3d-proton.git
     fi
     cd "$VKD_DIR"
     git fetch origin
-    git checkout fix/dxr-implicit-root-signature
+    git checkout master
+    git pull origin master
     git submodule update --init --recursive
-    log "Building vkd3d-proton (this takes ~5 min)..."
+    log "Building vkd3d-proton from master (this takes ~5 min)..."
     rm -rf build.64 build.32
     ./package-release.sh master "$BUILD_DIR/vkd3d-output" --no-package
-    ok "vkd3d-proton built with DXR fix"
+    ok "vkd3d-proton built (includes the upstream DXR fix)"
 }
 
 # ─── STEP 4: BUILD sm64rt ──────────────────────────────────────────────────────

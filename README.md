@@ -2,6 +2,8 @@
 
 Run Super Mario 64 with real-time path tracing on Linux using Wine, a patched vkd3d-proton, and DXVK.
 
+> **🎉 Update 2026-04-17**: The vkd3d-proton fix has been [merged upstream](https://github.com/HansKristian-Work/vkd3d-proton/pull/2940) by maintainer Hans-Kristian Arntzen (merge commit [`dd78b4f`](https://github.com/HansKristian-Work/vkd3d-proton/commit/dd78b4ff658526944c92a1e3360a1b3c808546f2)). It's now in `master`. Once the next release (after v3.0b) lands, you won't need to build vkd3d-proton from source — any distro's `vkd3d-proton` package or Proton/Proton-GE will have it built-in. Until then, this installer still builds from source to get the fix.
+
 This repo provides:
 - **sm64rt** — Vanilla SM64 textures + RT64 path tracing
 - **Render96ex RT64** — HD textures + HD models + RT64 path tracing
@@ -58,7 +60,7 @@ The installer handles **everything**: deps, SDL2, vkd3d-proton patch + build, sm
 
 RT64 (the path tracing renderer) calls `DispatchRays` without explicitly calling `SetComputeRootSignature`. Native Windows D3D12 drivers handle this implicitly, but vkd3d-proton (the D3D12-to-Vulkan translator used by Wine/Proton) strictly requires it — silently dropping every ray dispatch and producing black frames.
 
-**Our fix**: [vkd3d-proton PR #2940](https://github.com/HansKristian-Work/vkd3d-proton/pull/2940) — adds implicit root signature binding as a fallback when none is set.
+**Our fix** (✅ merged upstream 2026-04-17): [vkd3d-proton PR #2940](https://github.com/HansKristian-Work/vkd3d-proton/pull/2940) — adds implicit root signature binding as a fallback when none is set. Maintainer's review: *"Broken application, but guess we need to workaround then <_< sigh."* Fair enough.
 
 ## Step 1: Install Dependencies
 
@@ -163,17 +165,18 @@ cp -r /tmp/HDTextures/gfx build/us_pc/res/
 7z x -o"build/us_pc/dynos/packs/" /tmp/dynos.7z -y
 ```
 
-## Step 5: Build Patched vkd3d-proton
+## Step 5: Build vkd3d-proton from master
 
-Until [PR #2940](https://github.com/HansKristian-Work/vkd3d-proton/pull/2940) is merged upstream, you need to build vkd3d-proton from source with the fix.
+The fix is now in [vkd3d-proton master](https://github.com/HansKristian-Work/vkd3d-proton) (merged via [PR #2940](https://github.com/HansKristian-Work/vkd3d-proton/pull/2940) on 2026-04-17). The latest release (v3.0b, Dec 2025) does **not** yet include it, so for now build from master upstream:
 
 ```bash
-git clone https://github.com/danielbanariba/vkd3d-proton.git ~/build/vkd3d-proton-patched
-cd ~/build/vkd3d-proton-patched
-git checkout fix/dxr-implicit-root-signature
+git clone https://github.com/HansKristian-Work/vkd3d-proton.git ~/build/vkd3d-proton
+cd ~/build/vkd3d-proton
 git submodule update --init --recursive
 ./package-release.sh master ~/build/vkd3d-output --no-package
 ```
+
+**Once a new release after v3.0b is published**, you can skip this step entirely — just install the distro's `vkd3d-proton` package (or use Proton/Proton-GE which bundles it).
 
 ## Step 6: Setup Wine Prefix
 
